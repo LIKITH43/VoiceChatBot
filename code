@@ -1,0 +1,101 @@
+import React, { useState, useEffect } from 'react';
+
+interface ChatbotProps {}
+
+const Chatbot: React.FC<ChatbotProps> = () => {
+  const [transcript, setTranscript] = useState('');
+  const [response, setResponse] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const [speechRecognition, setSpeechRecognition] = useState(null);
+  const [speechSynthesis, setSpeechSynthesis] = useState(null);
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechSynthesis = window.SpeechSynthesis || window.webkitSpeechSynthesis;
+
+    if (SpeechRecognition && SpeechSynthesis) {
+      const recognition = new SpeechRecognition();
+      const synthesis = window.speechSynthesis;
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setTranscript(transcript);
+        processTranscript(transcript);
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Error occurred while recognizing speech:', event.error);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      setSpeechRecognition(recognition);
+      setSpeechSynthesis(synthesis);
+    }
+  }, []);
+
+  const processTranscript = async (transcript: string) => {
+    try {
+      const response = await generateResponse(transcript);
+      setResponse(response);
+      speakResponse(response);
+    } catch (error) {
+      console.error('Error occurred while generating response:', error);
+    }
+  };
+
+  const generateResponse = async (transcript: string) => {
+    // Simulate a large language model response
+    // Replace with actual LLM API call
+    return `You said: ${transcript}. That's interesting!`;
+  };
+
+  const speakResponse = (response: string) => {
+    if (speechSynthesis) {
+      const utterance = new SpeechSynthesisUtterance(response);
+      speechSynthesis.speak(utterance);
+    }
+  };
+
+  const handleStartListening = () => {
+    setIsListening(true);
+    if (speechRecognition) {
+      speechRecognition.start();
+    }
+  };
+
+  const handleStopListening = () => {
+    setIsListening(false);
+    if (speechRecognition) {
+      speechRecognition.stop();
+    }
+  };
+
+  return (
+    <div className="max-w-md mx-auto p-4 bg-white rounded-lg shadow-md">
+      <h1 className="text-lg font-bold mb-4">Voice-Enabled Chatbot</h1>
+      <div className="flex justify-between mb-4">
+        <button
+          className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ${
+            isListening ? 'bg-red-500 hover:bg-red-700' : ''
+          }`}
+          onClick={isListening ? handleStopListening : handleStartListening}
+        >
+          {isListening ? 'Stop Listening' : 'Start Listening'}
+        </button>
+      </div>
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">Transcript:</label>
+        <p className="text-gray-700 text-sm">{transcript}</p>
+      </div>
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">Response:</label>
+        <p className="text-gray-700 text-sm">{response}</p>
+      </div>
+    </div>
+  );
+};
+
+export default Chatbot;
